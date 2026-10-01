@@ -1,0 +1,12 @@
+venv/
+__pycache__/
+*.pyc
+data/raw/*
+!data/raw/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+ml/models/*.pt
+ml/models/*.h5
+node_modules/
+.env
+docs/eda_output/

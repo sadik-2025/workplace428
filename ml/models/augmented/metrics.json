@@ -1,0 +1,19 @@
+{
+  "model_name": "Augmented CNN",
+  "test_accuracy": 0.9741892786234282,
+  "top1_accuracy": 0.9741892786234282,
+  "precision_macro": 0.9747482497013561,
+  "recall_macro": 0.9743838804745745,
+  "f1_macro": 0.9742679651825702,
+  "unseen_domain_accuracy": 0.3414956982131039,
+  "unseen_domain_precision_macro": 0.6868248815708456,
+  "unseen_domain_recall_macro": 0.35190163828437093,
+  "unseen_domain_f1_macro": 0.3805983450331851,
+  "generalization_gap": 0.6326935804103243,
+  "inference_time_ms_per_batch": 36.58744812011719,
+  "batch_size_used_for_timing": 64,
+  "num_parameters": 917459,
+  "model_size_mb": 3.5015602111816406,
+  "epochs_trained": 15,
+  "best_val_accuracy": 0.9781601588352085
+}

@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Handwritten Math Symbol AI</title>
+<link rel="stylesheet" href="styles.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+</head>
+<body>
+
+<nav id="navbar">
+  <div class="nav-brand" data-nav="landing">Math Symbol AI</div>
+  <div class="nav-links" id="navLinks">
+    <!-- filled dynamically based on auth state -->
+  </div>
+</nav>
+
+<main id="app">
+
+  <!-- ===================== LANDING ===================== -->
+  <section data-view="landing" class="view">
+    <div class="hero">
+      <h1>Handwritten Math Symbol Recognition</h1>
+      <p>Upload or draw a handwritten digit or math symbol and see how three
+         different machine learning approaches — a baseline CNN, an
+         augmented CNN, and a self-supervised + domain-adversarial model —
+         classify it.</p>
+      <div class="hero-buttons">
+        <button class="btn primary" data-nav="register">Get Started</button>
+        <button class="btn" data-nav="login">Log In</button>
+      </div>
+    </div>
+    <div class="feature-grid">
+      <div class="feature-card">
+        <h3>Recognize Symbols</h3>
+        <p>Classify digits, operators (+ − × ÷), and variables from your own handwriting.</p>
+      </div>
+      <div class="feature-card">
+        <h3>Compare Models</h3>
+        <p>See accuracy, precision, recall, F1, inference time, and model size side by side.</p>
+      </div>
+      <div class="feature-card">
+        <h3>Formula Recognition</h3>
+        <p>Draw or upload a full handwritten expression and get it reconstructed symbol by symbol.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== REGISTER ===================== -->
+  <section data-view="register" class="view">
+    <div class="card form-card">
+      <h2>Create an account</h2>
+      <form id="registerForm">
+        <label>Username</label>
+        <input type="text" id="regUsername" required />
+        <label>Email</label>
+        <input type="email" id="regEmail" required />
+        <label>Password</label>
+        <input type="password" id="regPassword" required minlength="6" />
+        <button type="submit" class="btn primary">Register</button>
+      </form>
+      <p class="form-note">Already have an account? <a data-nav="login">Log in</a></p>
+      <p id="registerError" class="error"></p>
+    </div>
+  </section>
+
+  <!-- ===================== LOGIN ===================== -->
+  <section data-view="login" class="view">
+    <div class="card form-card">
+      <h2>Log in</h2>
+      <form id="loginForm">
+        <label>Username</label>
+        <input type="text" id="loginUsername" required />
+        <label>Password</label>
+        <input type="password" id="loginPassword" required />
+        <button type="submit" class="btn primary">Log In</button>
+      </form>
+      <p class="form-note">No account? <a data-nav="register">Register</a></p>
+      <p id="loginError" class="error"></p>
+    </div>
+  </section>
+
+  <!-- ===================== DASHBOARD ===================== -->
+  <section data-view="dashboard" class="view">
+    <h2>Dashboard</h2>
+    <div class="stat-grid">
+      <div class="stat-card"><span id="statTotal">-</span><label>Total Predictions</label></div>
+      <div class="stat-card"><span id="statMostFrequent">-</span><label>Most Frequent Symbol</label></div>
+      <div class="stat-card"><span id="statAvgConf">-</span><label>Average Confidence</label></div>
+    </div>
+    <div class="chart-grid">
+      <div class="chart-card"><h3>Predictions by Class</h3><canvas id="distChart"></canvas></div>
+      <div class="chart-card"><h3>Confidence Distribution</h3><canvas id="confChart"></canvas></div>
+      <div class="chart-card"><h3>Predictions Over Time</h3><canvas id="timeChart"></canvas></div>
+    </div>
+    <h2>Model Performance</h2>
+    <div id="modelTableWrap"></div>
+    <div class="chart-card"><h3>Standard vs Unseen-Domain Accuracy</h3><canvas id="modelCompareChart"></canvas></div>
+  </section>
+
+  <!-- ===================== SYMBOL RECOGNITION ===================== -->
+  <section data-view="recognize" class="view">
+    <h2>Symbol Recognition</h2>
+    <div class="card">
+      <label>Model</label>
+      <select id="modelSelect">
+        <option value="ssl_domain_gen">SSL + Domain-Adversarial CNN (recommended)</option>
+        <option value="augmented">Augmented CNN</option>
+        <option value="baseline">Baseline CNN</option>
+      </select>
+
+      <div class="recognize-grid">
+        <div>
+          <h3>Upload an image</h3>
+          <input type="file" id="fileInput" accept="image/*" />
+          <img id="uploadPreview" class="preview-img" />
+        </div>
+        <div>
+          <h3>...or draw a symbol</h3>
+          <canvas id="drawCanvas" width="200" height="200"></canvas>
+          <div class="canvas-buttons">
+            <button class="btn" id="clearCanvas">Clear</button>
+            <button class="btn primary" id="useDrawing">Use Drawing</button>
+          </div>
+        </div>
+      </div>
+
+      <button class="btn primary" id="predictBtn" style="margin-top:16px;">Predict</button>
+      <p id="predictError" class="error"></p>
+    </div>
+  </section>
+
+  <!-- ===================== PREDICTION RESULT ===================== -->
+  <section data-view="result" class="view">
+    <h2>Prediction Result</h2>
+    <div class="card result-card">
+      <div class="result-top">
+        <img id="resultImage" class="preview-img" />
+        <div>
+          <div class="result-symbol" id="resultSymbol">-</div>
+          <div>Confidence: <b id="resultConfidence">-</b></div>
+          <div>Model used: <b id="resultModel">-</b></div>
+          <div>Date: <span id="resultDate">-</span></div>
+        </div>
+      </div>
+      <h3>Top-K Predictions</h3>
+      <canvas id="topKChart"></canvas>
+      <button class="btn primary" id="runRobustness" style="margin-top:16px;">Run Robustness Analysis</button>
+    </div>
+  </section>
+
+  <!-- ===================== ROBUSTNESS ANALYSIS ===================== -->
+  <section data-view="robustness" class="view">
+    <h2>Robustness Analysis</h2>
+    <p>Same image, tested under different transformations, using the same model.</p>
+    <div id="robustnessGrid" class="robustness-grid"></div>
+  </section>
+
+  <!-- ===================== FORMULA RECOGNITION ===================== -->
+  <section data-view="formula" class="view">
+    <h2>Formula Recognition</h2>
+    <p>Draw or upload a full handwritten expression (e.g. "3+5=8"). Each
+       symbol is detected and classified individually, then reassembled
+       left to right.</p>
+    <div class="card">
+      <label>Model</label>
+      <select id="formulaModelSelect">
+        <option value="ssl_domain_gen">SSL + Domain-Adversarial CNN (recommended)</option>
+        <option value="augmented">Augmented CNN</option>
+        <option value="baseline">Baseline CNN</option>
+      </select>
+
+      <div class="recognize-grid">
+        <div>
+          <h3>Upload a photo</h3>
+          <input type="file" id="formulaFileInput" accept="image/*" />
+          <img id="formulaPreview" class="preview-img" />
+        </div>
+        <div>
+          <h3>...or draw the expression</h3>
+          <p style="font-size:0.85em; color:var(--text-dim); margin:4px 0;">Leave clear gaps between symbols.</p>
+          <canvas id="formulaDrawCanvas" width="500" height="150"></canvas>
+          <div class="canvas-buttons">
+            <button class="btn" id="clearFormulaCanvas">Clear</button>
+            <button class="btn primary" id="useFormulaDrawing">Use Drawing</button>
+          </div>
+        </div>
+      </div>
+
+      <button class="btn primary" id="formulaPredictBtn" style="margin-top:16px;">Recognize Formula</button>
+      <p id="formulaError" class="error"></p>
+    </div>
+
+    <div class="card" id="formulaResultCard" style="margin-top:20px; display:none;">
+      <h3>Reconstructed Expression</h3>
+      <div class="result-symbol" id="formulaExpression">-</div>
+      <h3 style="margin-top:20px;">Detected Symbols (left to right)</h3>
+      <div id="formulaSegments" class="robustness-grid"></div>
+    </div>
+  </section>
+
+  <!-- ===================== PROFILE ===================== -->
+  <section data-view="profile" class="view">
+    <h2>User Profile</h2>
+    <div class="card">
+      <p><b>Username:</b> <span id="profileUsername">-</span></p>
+      <p><b>Email:</b> <span id="profileEmail">-</span></p>
+      <p><b>Member since:</b> <span id="profileCreated">-</span></p>
+      <button class="btn" id="logoutBtn">Log Out</button>
+    </div>
+  </section>
+
+</main>
+
+<script src="app.js"></script>
+</body>
+</html>

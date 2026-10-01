@@ -1,0 +1,20 @@
+{
+  "model_name": "SSL + Domain-Adversarial CNN",
+  "test_accuracy": 0.9324950363997353,
+  "top1_accuracy": 0.9324950363997353,
+  "precision_macro": 0.9374435813137305,
+  "recall_macro": 0.9308722274667596,
+  "f1_macro": 0.9325410169417087,
+  "unseen_domain_accuracy": 0.6101919258769027,
+  "unseen_domain_precision_macro": 0.6755029045871893,
+  "unseen_domain_recall_macro": 0.6089000394552556,
+  "unseen_domain_f1_macro": 0.6106901473813086,
+  "generalization_gap": 0.32230311052283256,
+  "inference_time_ms_per_batch": 35.938029289245605,
+  "batch_size_used_for_timing": 64,
+  "num_parameters": 917459,
+  "model_size_mb": 3.5015602111816406,
+  "epochs_trained": 12,
+  "best_val_accuracy": 0.914626075446724,
+  "used_pretrained_ssl_encoder": true
+}

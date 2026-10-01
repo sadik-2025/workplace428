@@ -1,0 +1,14 @@
+{
+  "model_name": "Baseline CNN",
+  "test_accuracy": 0.971542025148908,
+  "top1_accuracy": 0.971542025148908,
+  "precision_macro": 0.9743503430773828,
+  "recall_macro": 0.9700229946797702,
+  "f1_macro": 0.971629745557183,
+  "inference_time_ms_per_batch": 42.86080360412598,
+  "batch_size_used_for_timing": 64,
+  "num_parameters": 917459,
+  "model_size_mb": 3.5015602111816406,
+  "epochs_trained": 15,
+  "best_val_accuracy": 0.9662475181998676
+}
