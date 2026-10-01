@@ -7,6 +7,8 @@ services:
       - "8000:8000"
     volumes:
       - ./backend/app.db:/app/backend/app.db
+      - ./data:/app/data
+      - ./ml:/app/ml
     restart: unless-stopped
   frontend:
     build:
