@@ -22,7 +22,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 ML_SCRIPTS_DIR = PROJECT_ROOT / "ml" / "scripts"
 ML_MODELS_DIR = PROJECT_ROOT / "ml" / "models"
 SPLITS_DIR = PROJECT_ROOT / "data" / "processed" / "splits"
-
+if not(SPLITS_DIR / "class_to_idx.json").exists(): SPLITS_DIR = PROJECT_ROOT / "ml" / "models"
 sys.path.insert(0, str(ML_SCRIPTS_DIR))
 
 from model_baseline import BaselineCNN  # noqa: E402
