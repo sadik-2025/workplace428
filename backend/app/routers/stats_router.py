@@ -15,8 +15,15 @@ def get_stats(db: Session = Depends(get_db), current_user: models.User = Depends
     """Powers the interactive Dashboard. Covers 6 of the suggested
     components: total predictions, most frequent symbol, prediction
     distribution by class, average confidence, predictions over time, and
-    confidence distribution."""
-    predictions = db.query(models.Prediction).all()
+    confidence distribution.
+
+    Scoped to the logged-in user's own predictions only.
+    """
+    predictions = (
+        db.query(models.Prediction)
+        .filter(models.Prediction.user_id == current_user.id)
+        .all()
+    )
     total = len(predictions)
 
     if total == 0:

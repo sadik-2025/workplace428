@@ -1,64 +1,136 @@
-# WEX 428 — Handwritten Math Symbol AI
+\# WEX 428 — Handwritten Math Symbol AI
 
-Full-stack ML platform for handwritten mathematical symbol recognition, with
-self-supervised learning and domain generalization comparisons.
 
-## Repo structure
+
+Full-stack ML platform for handwritten mathematical symbol recognition,
+
+comparing a baseline CNN, an augmented CNN, and a self-supervised +
+
+domain-adversarial model. Includes handwritten formula recognition
+
+(multi-symbol segmentation + reconstruction).
+
+
+
+\*\*Live frontend:\*\* https://sadik-2025.github.io/workplace428/frontend/
+
+\*\*Backend:\*\* deployed on Render (see Deployment below)
+
+
+
+\## Repo structure
+
+
+
+
+
+\## Local development
+
+
+
+Backend:
+
+```bash
+
+cd backend
+
+python -m venv venv \&\& source venv/bin/activate   # Windows: venv\\Scripts\\activate
+
+pip install -r requirements.txt
+
+uvicorn app.main:app --reload
 
 ```
-wex428-project/
-├── backend/            # FastAPI (or your chosen framework) — auth, prediction API, stats
-├── frontend/           # React / HTML+JS — landing, auth, dashboard, symbol recognition UI
-├── ml/
-│   ├── data/           # dataset loading utilities
-│   ├── models/         # saved model weights (.pt/.h5) — one subfolder per approach
-│   ├── notebooks/       # exploratory / experimental notebooks
-│   ├── scripts/        # reusable scripts (eda.py, train.py, evaluate.py, etc.)
-│   └── requirements.txt
-├── data/
-│   ├── raw/            # put the downloaded Kaggle dataset here, unzipped
-│   └── processed/      # resized/cleaned images, split indices, etc.
-└── docs/               # report drafts, EDA output, diagrams
+
+Visit `http://127.0.0.1:8000/docs` to confirm it's running.
+
+
+
+Frontend:
+
+```bash
+
+cd frontend
+
+python -m http.server 5500
+
 ```
 
-## Getting started (Phase 1)
+Visit `http://localhost:5500` — `app.js` automatically points at `127.0.0.1:8000`
 
-1. Download the dataset from the Kaggle link / Google Drive link provided in
-   the course PDF, unzip it, and place its contents into `data/raw/`.
-   - If the dataset is class-per-folder (e.g. `data/raw/0/`, `data/raw/+/`, ...),
-     no changes needed.
-   - If it's a flat folder + CSV of labels, or pixel-in-CSV format, tell me and
-     I'll adjust `ml/scripts/eda.py`'s `load_image_dataset()` function.
+when running locally.
 
-2. Set up a Python environment for the ML side:
-   ```bash
-   cd ml
-   python -m venv venv
-   source venv/bin/activate   # Windows: venv\Scripts\activate
-   pip install -r requirements.txt
-   ```
 
-3. Run the EDA script:
-   ```bash
-   cd ml/scripts
-   python eda.py --data_dir ../../data/raw --out_dir ../../docs/eda_output
-   ```
-   This will print class distribution, image size/mode stats, a proposed
-   train/val/test split, and save a sample grid image + class distribution
-   chart into `docs/eda_output/`.
 
-4. Review `docs/eda_output/class_distribution.png` and `sample_grid.png` —
-   check whether classes are balanced and whether images need resizing.
+Or run both together: `docker compose up --build`.
 
-## Next phases
 
-- **Phase 2**: baseline CNN/ResNet training script (`ml/scripts/train_baseline.py`)
-- **Phase 3**: augmentation-based training variant
-- **Phase 4**: self-supervised pretraining + domain generalization
-- **Phase 5**: FastAPI backend
-- **Phase 6**: frontend
-- **Phase 7**: formula segmentation + reconstruction
-- **Phase 8**: Docker Compose deployment
 
-Come back once Phase 1 is done (or if the dataset layout differs from what's
-assumed here) and we'll build the Phase 2 training script next.
+\## Deployment
+
+
+
+\*\*Backend (Render, Docker environment):\*\*
+
+1\. New Web Service → connect this repo.
+
+2\. Environment: Docker (Render auto-detects `backend/Dockerfile`).
+
+3\. \*\*Service name must be `workplace428`\*\* so its URL (`workplace428.onrender.com`)
+
+&#x20;  matches what `frontend/app.js` already expects. If you use a different name,
+
+&#x20;  update `API\_BASE` in `app.js` to match instead.
+
+4\. Environment variables:
+
+&#x20;  - `SECRET\_KEY` — any long random string (used for JWT signing)
+
+&#x20;  - `ALLOWED\_ORIGINS` — `https://sadik-2025.github.io` (tightens CORS)
+
+5\. Deploy. Confirm `/health` returns `{"status": "ok"}`.
+
+
+
+\*\*Frontend (GitHub Pages):\*\* already live — deploys automatically on push to `main`.
+
+
+
+\*\*Note:\*\* Render's free tier uses ephemeral disk, so the SQLite database
+
+(`backend/app.db`) resets on redeploy/restart. Fine for demos; for persistence,
+
+switch `DATABASE\_URL` to a managed Postgres instance.
+
+
+
+\## Model comparison
+
+
+
+Three approaches, trained and evaluated in `ml/scripts/`, metrics saved to
+
+`ml/models/<name>/metrics.json` and served via `/models/compare`:
+
+
+
+\- \*\*baseline\*\* — plain CNN
+
+\- \*\*augmented\*\* — same CNN, trained with data augmentation
+
+\- \*\*ssl\_domain\_gen\*\* — self-supervised pretraining + domain-adversarial fine-tuning (default/recommended model in the UI)
+
+
+
+\## Known limitations
+
+
+
+\- SQLite resets on Render free-tier redeploys (see above).
+
+\- Formula recognition segments symbols via classical CV contour detection —
+
+&#x20; works best with clear spacing between symbols; touching/overlapping
+
+&#x20; symbols can merge into one segment.
+

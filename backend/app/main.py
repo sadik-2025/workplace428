@@ -1,3 +1,5 @@
+import os
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -9,9 +11,22 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Handwritten Math Symbol AI — Backend", version="0.2.0")
 
+# Set ALLOWED_ORIGINS env var (comma-separated) on Render to override, e.g.:
+#   ALLOWED_ORIGINS=https://sadik-2025.github.io
+# Falls back to localhost + the known GitHub Pages origin for local/dev use.
+_default_origins = [
+    "http://localhost:5500",
+    "http://127.0.0.1:5500",
+    "https://sadik-2025.github.io",
+]
+_env_origins = os.getenv("ALLOWED_ORIGINS")
+allowed_origins = (
+    [o.strip() for o in _env_origins.split(",") if o.strip()] if _env_origins else _default_origins
+)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # tighten this to your actual frontend origin before deploying
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
