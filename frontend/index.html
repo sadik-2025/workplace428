@@ -214,15 +214,15 @@
     <section data-view="profile" class="view">
       <h2>User Profile</h2>
       <div class="card">
-        <img id="avatar" width="120" height="120" style="border-radius:50%;object-fit:cover;background:#222">
-        <input type="file" id="avatarInput" accept="image/*">
-
-        <div class="card">
-          <p><b>Username:</b> <span id="profileUsername">-</span></p>
-          <p><b>Email:</b> <span id="profileEmail">-</span></p>
-          <p><b>Member since:</b> <span id="profileCreated">-</span></p>
-          <button class="btn" id="logoutBtn">Log Out</button>
+        <div style="display:flex; align-items:center; gap:16px; margin-bottom:16px;">
+          <img id="avatar" width="120" height="120" style="border-radius:50%;object-fit:cover;background:#222">
+          <input type="file" id="avatarInput" accept="image/*">
         </div>
+        <p><b>Username:</b> <span id="profileUsername">-</span></p>
+        <p><b>Email:</b> <span id="profileEmail">-</span></p>
+        <p><b>Member since:</b> <span id="profileCreated">-</span></p>
+        <button class="btn" id="logoutBtn">Log Out</button>
+      </div>
     </section>
 
   </main>
