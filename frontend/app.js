@@ -467,3 +467,20 @@ function renderFormulaResult(data) {
 // ---------- Init ----------
 renderNav();
 showView(getToken() ? "dashboard" : "landing");
+const AVATAR_KEY = "wex428_avatar";
+const avatarImg = document.getElementById("avatar");
+const avatarInput = document.getElementById("avatarInput");
+
+avatarImg.src = localStorage.getItem(AVATAR_KEY) || "";
+
+avatarInput.addEventListener("change", () => {
+  const file = avatarInput.files[0];
+  if (!file) return;
+  if (file.size > 1024 * 1024) return alert("Image too big (max 1 MB)");
+  const reader = new FileReader();
+  reader.onload = () => {
+    localStorage.setItem(AVATAR_KEY, reader.result);
+    avatarImg.src = reader.result;
+  };
+  reader.readAsDataURL(file);
+});
