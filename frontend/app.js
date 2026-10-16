@@ -1,7 +1,7 @@
-const API_BASE = ["localhost", "127.0.0.1"].includes(location.hostname)
-  ? "http://127.0.0.1:8000"
-  : "https://workplace428.onrender.com";
-const TOKEN_KEY = "wex428_token";
+   const API_BASE = ["localhost", "127.0.0.1"].includes(location.hostname)
+     ? "http://127.0.0.1:8000"
+     : "https://workplace428.onrender.com";
+   const TOKEN_KEY = "wex428_token";
 
 // ---------- Simple view router ----------
 const views = document.querySelectorAll(".view");
@@ -120,20 +120,49 @@ document.getElementById("logoutBtn").addEventListener("click", () => {
 });
 
 // ---------- Profile ----------
+function renderAvatar(username) {
+  const img = document.getElementById("avatar");
+  const fallback = document.getElementById("avatarInitial");
+  const saved = localStorage.getItem(`avatar:${username}`);
+  if (saved) {
+    img.src = saved;
+    img.style.display = "block";
+    fallback.style.display = "none";
+  } else {
+    img.style.display = "none";
+    fallback.textContent = (username || "?").charAt(0).toUpperCase();
+    fallback.style.display = "flex";
+  }
+}
+
 async function loadProfile() {
   try {
     const res = await fetch(`${API_BASE}/auth/me`, { headers: authHeaders() });
     if (!res.ok) throw new Error();
     const data = await res.json();
     document.getElementById("profileUsername").textContent = data.username;
+    document.getElementById("profileUsernameBig").textContent = data.username;
     document.getElementById("profileEmail").textContent = data.email;
-    document.getElementById("profileCreated").textContent = new Date(data.created_at).toLocaleString();
+    document.getElementById("profileCreated").textContent = new Date(data.created_at).toLocaleDateString();
+    renderAvatar(data.username);
   } catch {
     clearToken();
     renderNav();
     showView("login");
   }
 }
+
+document.getElementById("avatarInput").addEventListener("change", (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    const username = document.getElementById("profileUsernameBig").textContent;
+    localStorage.setItem(`avatar:${username}`, reader.result);
+    renderAvatar(username);
+  };
+  reader.readAsDataURL(file);
+});
 
 // ---------- Dashboard ----------
 let distChartInstance, confChartInstance, timeChartInstance, modelCompareChartInstance;
@@ -467,20 +496,3 @@ function renderFormulaResult(data) {
 // ---------- Init ----------
 renderNav();
 showView(getToken() ? "dashboard" : "landing");
-const AVATAR_KEY = "wex428_avatar";
-const avatarImg = document.getElementById("avatar");
-const avatarInput = document.getElementById("avatarInput");
-
-avatarImg.src = localStorage.getItem(AVATAR_KEY) || "";
-
-avatarInput.addEventListener("change", () => {
-  const file = avatarInput.files[0];
-  if (!file) return;
-  if (file.size > 1024 * 1024) return alert("Image too big (max 1 MB)");
-  const reader = new FileReader();
-  reader.onload = () => {
-    localStorage.setItem(AVATAR_KEY, reader.result);
-    avatarImg.src = reader.result;
-  };
-  reader.readAsDataURL(file);
-});
