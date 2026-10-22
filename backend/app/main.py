@@ -1,7 +1,10 @@
 import os
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 from .database import Base, engine
 from .routers import auth_router, formula_router, models_router, predict_router, stats_router
@@ -11,9 +14,6 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Handwritten Math Symbol AI — Backend", version="0.2.0")
 
-# Set ALLOWED_ORIGINS env var (comma-separated) on Render to override, e.g.:
-#   ALLOWED_ORIGINS=https://sadik-2025.github.io
-# Falls back to localhost + the known GitHub Pages origin for local/dev use.
 _default_origins = [
     "http://localhost:5500",
     "http://127.0.0.1:5500",
@@ -38,10 +38,15 @@ app.include_router(formula_router.router)
 app.include_router(stats_router.router)
 app.include_router(models_router.router)
 
+# ---- Frontend ----
+FRONTEND_DIR = Path(__file__).resolve().parents[2] / "frontend"
+
+app.mount("/static", StaticFiles(directory=FRONTEND_DIR), name="static")
+
 
 @app.get("/")
-def root():
-    return {"message": "Handwritten Math Symbol AI backend is running"}
+def home():
+    return FileResponse(FRONTEND_DIR / "index.html")
 
 
 @app.get("/health")
