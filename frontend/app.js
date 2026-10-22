@@ -1,495 +1,255 @@
-const API_BASE = location.port === "5500" ? "http://127.0.0.1:8000" : "";
-const TOKEN_KEY = "wex428_token";
-// ---------- Simple view router ----------
-const views = document.querySelectorAll(".view");
-function showView(name) {
-  views.forEach((v) => v.classList.toggle("active", v.dataset.view === name));
-  window.scrollTo(0, 0);
-  if (name === "dashboard") loadDashboard();
-  if (name === "profile") loadProfile();
-}
-document.body.addEventListener("click", (e) => {
-  const target = e.target.closest("[data-nav]");
-  if (target) {
-    e.preventDefault();
-    const view = target.dataset.nav;
-    if (["dashboard", "recognize", "profile", "result", "robustness", "formula"].includes(view) && !getToken()) {
-      showView("login");
-      return;
-    }
-    showView(view);
-  }
-});
+< !DOCTYPE html >
+  <html lang="en">
 
-// ---------- Auth helpers ----------
-function getToken() { return localStorage.getItem(TOKEN_KEY); }
-function setToken(t) { localStorage.setItem(TOKEN_KEY, t); }
-function clearToken() { localStorage.removeItem(TOKEN_KEY); }
+    <head>
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <title>Handwritten Math Symbol AI</title>
+      <link rel="stylesheet" href="/static/styles.css" />
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    </head>
 
-function authHeaders() {
-  const t = getToken();
-  return t ? { Authorization: `Bearer ${t}` } : {};
-}
+    <body>
 
-function renderNav() {
-  const navLinks = document.getElementById("navLinks");
-  if (getToken()) {
-    navLinks.innerHTML = `
-      <a data-nav="dashboard">Dashboard</a>
-      <a data-nav="recognize">Recognize</a>
-      <a data-nav="formula">Formula</a>
-      <a data-nav="profile">Profile</a>
-      <a id="navLogout">Log Out</a>
-    `;
-    document.getElementById("navLogout").addEventListener("click", () => {
-      clearToken();
-      renderNav();
-      showView("landing");
-    });
-  } else {
-    navLinks.innerHTML = `
-      <a data-nav="login">Log In</a>
-      <a data-nav="register">Register</a>
-    `;
-  }
-}
+      <nav id="navbar">
+        <div class="nav-brand" data-nav="landing">Math Symbol AI</div>
+        <div class="nav-links" id="navLinks">
+          <!-- filled dynamically based on auth state -->
+        </div>
+      </nav>
 
-// ---------- Register ----------
-document.getElementById("registerForm").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const username = document.getElementById("regUsername").value;
-  const email = document.getElementById("regEmail").value;
-  const password = document.getElementById("regPassword").value;
-  const errEl = document.getElementById("registerError");
-  errEl.textContent = "";
+      <main id="app">
 
-  try {
-    const res = await fetch(`${API_BASE}/auth/register`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, email, password }),
-    });
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      throw new Error(data.detail || "Registration failed");
-    }
-    showView("login");
-  } catch (err) {
-    errEl.textContent = err.message;
-  }
-});
+        <!-- ===================== LANDING ===================== -->
+        <section data-view="landing" class="view">
+          <div class="hero">
+            <h1>Handwritten Math Symbol Recognition</h1>
+            <p>Upload or draw a handwritten digit or math symbol and see how three
+              different machine learning approaches — a baseline CNN, an
+              augmented CNN, and a self-supervised + domain-adversarial model —
+              classify it.</p>
+            <div class="hero-buttons">
+              <button class="btn primary" data-nav="register">Get Started</button>
+              <button class="btn" data-nav="login">Log In</button>
+            </div>
+          </div>
+          <div class="feature-grid">
+            <div class="feature-card">
+              <h3>Recognize Symbols</h3>
+              <p>Classify digits, operators (+ − × ÷), and variables from your own handwriting.</p>
+            </div>
+            <div class="feature-card">
+              <h3>Compare Models</h3>
+              <p>See accuracy, precision, recall, F1, inference time, and model size side by side.</p>
+            </div>
+            <div class="feature-card">
+              <h3>Formula Recognition</h3>
+              <p>Draw or upload a full handwritten expression and get it reconstructed symbol by symbol.</p>
+            </div>
+          </div>
+        </section>
 
-// ---------- Login ----------
-document.getElementById("loginForm").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const username = document.getElementById("loginUsername").value;
-  const password = document.getElementById("loginPassword").value;
-  const errEl = document.getElementById("loginError");
-  errEl.textContent = "";
+        <!-- ===================== REGISTER ===================== -->
+        <section data-view="register" class="view">
+          <div class="card form-card">
+            <h2>Create an account</h2>
+            <form id="registerForm">
+              <label>Username</label>
+              <input type="text" id="regUsername" required />
+              <label>Email</label>
+              <input type="email" id="regEmail" required />
+              <label>Password</label>
+              <input type="password" id="regPassword" required minlength="6" />
+              <button type="submit" class="btn primary">Register</button>
+            </form>
+            <p class="form-note">Already have an account? <a data-nav="login">Log in</a></p>
+            <p id="registerError" class="error"></p>
+          </div>
+        </section>
 
-  try {
-    const body = new URLSearchParams();
-    body.append("username", username);
-    body.append("password", password);
+        <!-- ===================== LOGIN ===================== -->
+        <section data-view="login" class="view">
+          <div class="card form-card">
+            <h2>Log in</h2>
+            <form id="loginForm">
+              <label>Username</label>
+              <input type="text" id="loginUsername" required />
+              <label>Password</label>
+              <input type="password" id="loginPassword" required />
+              <button type="submit" class="btn primary">Log In</button>
+            </form>
+            <p class="form-note">No account? <a data-nav="register">Register</a></p>
+            <p id="loginError" class="error"></p>
+          </div>
+        </section>
 
-    const res = await fetch(`${API_BASE}/auth/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body,
-    });
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      throw new Error(data.detail || "Login failed");
-    }
-    const data = await res.json();
-    setToken(data.access_token);
-    renderNav();
-    showView("dashboard");
-  } catch (err) {
-    errEl.textContent = err.message;
-  }
-});
+        <!-- ===================== DASHBOARD ===================== -->
+        <section data-view="dashboard" class="view">
+          <h2>Dashboard</h2>
+          <div class="stat-grid">
+            <div class="stat-card"><span id="statTotal">-</span><label>Total Predictions</label></div>
+            <div class="stat-card"><span id="statMostFrequent">-</span><label>Most Frequent Symbol</label></div>
+            <div class="stat-card"><span id="statAvgConf">-</span><label>Average Confidence</label></div>
+          </div>
+          <div class="chart-grid">
+            <div class="chart-card">
+              <h3>Predictions by Class</h3><canvas id="distChart"></canvas>
+            </div>
+            <div class="chart-card">
+              <h3>Confidence Distribution</h3><canvas id="confChart"></canvas>
+            </div>
+            <div class="chart-card">
+              <h3>Predictions Over Time</h3><canvas id="timeChart"></canvas>
+            </div>
+          </div>
+          <h2>Model Performance</h2>
+          <div id="modelTableWrap"></div>
+          <div class="chart-card">
+            <h3>Standard vs Unseen-Domain Accuracy</h3><canvas id="modelCompareChart"></canvas>
+          </div>
+        </section>
 
-document.getElementById("logoutBtn").addEventListener("click", () => {
-  clearToken();
-  renderNav();
-  showView("landing");
-});
+        <!-- ===================== SYMBOL RECOGNITION ===================== -->
+        <section data-view="recognize" class="view">
+          <h2>Symbol Recognition</h2>
+          <div class="card">
+            <label>Model</label>
+            <select id="modelSelect">
+              <option value="ssl_domain_gen">SSL + Domain-Adversarial CNN (recommended)</option>
+              <option value="augmented">Augmented CNN</option>
+              <option value="baseline">Baseline CNN</option>
+            </select>
 
-// ---------- Profile ----------
-function renderAvatar(username) {
-  const img = document.getElementById("avatar");
-  const fallback = document.getElementById("avatarInitial");
-  const saved = localStorage.getItem(`avatar:${username}`);
-  if (saved) {
-    img.src = saved;
-    img.style.display = "block";
-    fallback.style.display = "none";
-  } else {
-    img.style.display = "none";
-    fallback.textContent = (username || "?").charAt(0).toUpperCase();
-    fallback.style.display = "flex";
-  }
-}
+            <div class="recognize-grid">
+              <div>
+                <h3>Upload an image</h3>
+                <input type="file" id="fileInput" accept="image/*" />
+                <img id="uploadPreview" class="preview-img" />
+              </div>
+              <div>
+                <h3>...or draw a symbol</h3>
+                <canvas id="drawCanvas" width="200" height="200"></canvas>
+                <div class="canvas-buttons">
+                  <button class="btn" id="clearCanvas">Clear</button>
+                  <button class="btn primary" id="useDrawing">Use Drawing</button>
+                </div>
+              </div>
+            </div>
 
-async function loadProfile() {
-  try {
-    const res = await fetch(`${API_BASE}/auth/me`, { headers: authHeaders() });
-    if (!res.ok) throw new Error();
-    const data = await res.json();
-    document.getElementById("profileUsername").textContent = data.username;
-    document.getElementById("profileUsernameBig").textContent = data.username;
-    document.getElementById("profileEmail").textContent = data.email;
-    document.getElementById("profileCreated").textContent = new Date(data.created_at).toLocaleDateString();
-    renderAvatar(data.username);
-  } catch {
-    clearToken();
-    renderNav();
-    showView("login");
-  }
-}
+            <button class="btn primary" id="predictBtn" style="margin-top:16px;">Predict</button>
+            <p id="predictError" class="error"></p>
+          </div>
+        </section>
 
-document.getElementById("avatarInput").addEventListener("change", (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = () => {
-    const username = document.getElementById("profileUsernameBig").textContent;
-    localStorage.setItem(`avatar:${username}`, reader.result);
-    renderAvatar(username);
-  };
-  reader.readAsDataURL(file);
-});
+        <!-- ===================== PREDICTION RESULT ===================== -->
+        <section data-view="result" class="view">
+          <h2>Prediction Result</h2>
+          <div class="card result-card">
+            <div class="result-top">
+              <img id="resultImage" class="preview-img" />
+              <div>
+                <div class="result-symbol" id="resultSymbol">-</div>
+                <div>Confidence: <b id="resultConfidence">-</b></div>
+                <div>Model used: <b id="resultModel">-</b></div>
+                <div>Date: <span id="resultDate">-</span></div>
+              </div>
+            </div>
+            <h3>Top-K Predictions</h3>
+            <canvas id="topKChart"></canvas>
+            <button class="btn primary" id="runRobustness" style="margin-top:16px;">Run Robustness Analysis</button>
+            <div style="margin-top:12px; display:flex; gap:8px;">
+              <button class="btn" id="downloadCsv">Download CSV</button>
+              <button class="btn" id="downloadPdf">Download PDF</button>
+            </div>
+          </div>
+        </section>
 
-// ---------- Dashboard ----------
-let distChartInstance, confChartInstance, timeChartInstance, modelCompareChartInstance;
+        <!-- ===================== ROBUSTNESS ANALYSIS ===================== -->
+        <section data-view="robustness" class="view">
+          <h2>Robustness Analysis</h2>
+          <p>Same image, tested under different transformations, using the same model.</p>
+          <div id="robustnessGrid" class="robustness-grid"></div>
+        </section>
 
-async function loadDashboard() {
-  try {
-    const statsRes = await fetch(`${API_BASE}/stats`, { headers: authHeaders() });
-    const stats = await statsRes.json();
+        <!-- ===================== FORMULA RECOGNITION ===================== -->
+        <section data-view="formula" class="view">
+          <h2>Formula Recognition</h2>
+          <p>Draw or upload a full handwritten expression (e.g. "3+5=8"). Each
+            symbol is detected and classified individually, then reassembled
+            left to right.</p>
+          <div class="card">
+            <label>Model</label>
+            <select id="formulaModelSelect">
+              <option value="ssl_domain_gen">SSL + Domain-Adversarial CNN (recommended)</option>
+              <option value="augmented">Augmented CNN</option>
+              <option value="baseline">Baseline CNN</option>
+            </select>
 
-    document.getElementById("statTotal").textContent = stats.total_predictions;
-    document.getElementById("statMostFrequent").textContent = stats.most_frequent_symbol ?? "-";
-    document.getElementById("statAvgConf").textContent = stats.average_confidence
-      ? (stats.average_confidence * 100).toFixed(1) + "%"
-      : "-";
+            <div class="recognize-grid">
+              <div>
+                <h3>Upload a photo</h3>
+                <input type="file" id="formulaFileInput" accept="image/*" />
+                <img id="formulaPreview" class="preview-img" />
+              </div>
+              <div>
+                <h3>...or draw the expression</h3>
+                <p style="font-size:0.85em; color:var(--text-dim); margin:4px 0;">Leave clear gaps between symbols.</p>
+                <canvas id="formulaDrawCanvas" width="500" height="150"></canvas>
+                <div class="canvas-buttons">
+                  <button class="btn" id="clearFormulaCanvas">Clear</button>
+                  <button class="btn primary" id="useFormulaDrawing">Use Drawing</button>
+                </div>
+              </div>
+            </div>
 
-    drawBarChart("distChart", distChartInstance, Object.keys(stats.prediction_distribution),
-      Object.values(stats.prediction_distribution), "Predictions")
-      .then((c) => (distChartInstance = c));
+            <button class="btn primary" id="formulaPredictBtn" style="margin-top:16px;">Recognize Formula</button>
+            <p id="formulaError" class="error"></p>
+          </div>
 
-    drawBarChart("confChart", confChartInstance, Object.keys(stats.confidence_distribution),
-      Object.values(stats.confidence_distribution), "Count")
-      .then((c) => (confChartInstance = c));
+          <div class="card" id="formulaResultCard" style="margin-top:20px; display:none;">
+            <h3>Reconstructed Expression</h3>
+            <div class="result-symbol" id="formulaExpression">-</div>
+            <h3 style="margin-top:20px;">Detected Symbols (left to right)</h3>
+            <div id="formulaSegments" class="robustness-grid"></div>
+          </div>
+        </section>
 
-    drawLineChart("timeChart", timeChartInstance, Object.keys(stats.predictions_over_time),
-      Object.values(stats.predictions_over_time))
-      .then((c) => (timeChartInstance = c));
+        <!-- ===================== PROFILE ===================== -->
+        <section data-view="profile" class="view">
+          <h2>User Profile</h2>
+          <div class="card profile-card">
+            <div class="profile-header">
+              <div class="avatar-wrap">
+                <img id="avatar" class="avatar-img">
+                  <div id="avatarInitial" class="avatar-fallback">?</div>
+                  <label for="avatarInput" class="avatar-edit-btn" title="Change photo">✎</label>
+                  <input type="file" id="avatarInput" accept="image/*" hidden>
+                  </div>
+                  <div>
+                    <div id="profileUsernameBig" class="profile-name">-</div>
+                    <div class="profile-sub">Member since <span id="profileCreated">-</span></div>
+                  </div>
+              </div>
 
-    const modelsRes = await fetch(`${API_BASE}/models/compare`, { headers: authHeaders() });
-    const models = await modelsRes.json();
-    renderModelTable(models);
-    renderModelCompareChart(models);
-  } catch (err) {
-    console.error(err);
-  }
-}
+              <div class="profile-info-grid">
+                <div class="profile-info-row">
+                  <span class="profile-info-label">Username</span>
+                  <span class="profile-info-value" id="profileUsername">-</span>
+                </div>
+                <div class="profile-info-row">
+                  <span class="profile-info-label">Email</span>
+                  <span class="profile-info-value" id="profileEmail">-</span>
+                </div>
+              </div>
 
-function renderModelTable(models) {
-  const wrap = document.getElementById("modelTableWrap");
-  const rows = Object.entries(models)
-    .filter(([, m]) => m)
-    .map(
-      ([key, m]) => `
-      <tr>
-        <td>${m.model_name}</td>
-        <td>${(m.test_accuracy * 100).toFixed(1)}%</td>
-        <td>${m.unseen_domain_accuracy != null ? (m.unseen_domain_accuracy * 100).toFixed(1) + "%" : "-"}</td>
-        <td>${(m.f1_macro * 100).toFixed(1)}%</td>
-        <td>${m.inference_time_ms_per_batch.toFixed(1)} ms</td>
-        <td>${m.num_parameters.toLocaleString()}</td>
-        <td>${m.model_size_mb.toFixed(2)} MB</td>
-      </tr>`
-    )
-    .join("");
-  wrap.innerHTML = `
-    <table>
-      <thead><tr>
-        <th>Model</th><th>Test Acc</th><th>Unseen-Domain Acc</th><th>F1</th>
-        <th>Inference</th><th>Params</th><th>Size</th>
-      </tr></thead>
-      <tbody>${rows}</tbody>
-    </table>`;
-}
+              <button class="btn" id="logoutBtn">Log Out</button>
+            </div>
+        </section>
 
-function renderModelCompareChart(models) {
-  const ctx = document.getElementById("modelCompareChart").getContext("2d");
-  const entries = Object.entries(models).filter(([, m]) => m);
-  if (modelCompareChartInstance) modelCompareChartInstance.destroy();
-  modelCompareChartInstance = new Chart(ctx, {
-    type: "bar",
-    data: {
-      labels: entries.map(([, m]) => m.model_name),
-      datasets: [
-        { label: "Standard Test", data: entries.map(([, m]) => m.test_accuracy), backgroundColor: "#6c8cff" },
-        {
-          label: "Unseen Domain",
-          data: entries.map(([, m]) => m.unseen_domain_accuracy ?? 0),
-          backgroundColor: "#e29a4c",
-        },
-      ],
-    },
-    options: { scales: { y: { beginAtZero: true, max: 1 } }, responsive: true },
-  });
-}
+      </main>
 
-async function drawBarChart(canvasId, existing, labels, data, label) {
-  const ctx = document.getElementById(canvasId).getContext("2d");
-  if (existing) existing.destroy();
-  return new Chart(ctx, {
-    type: "bar",
-    data: { labels, datasets: [{ label, data, backgroundColor: "#6c8cff" }] },
-    options: { scales: { y: { beginAtZero: true } }, responsive: true, plugins: { legend: { display: false } } },
-  });
-}
+      <script src="/static/app.js"></script>
+    </body>
 
-async function drawLineChart(canvasId, existing, labels, data) {
-  const ctx = document.getElementById(canvasId).getContext("2d");
-  if (existing) existing.destroy();
-  return new Chart(ctx, {
-    type: "line",
-    data: { labels, datasets: [{ label: "Predictions", data, borderColor: "#6c8cff", tension: 0.3 }] },
-    options: { scales: { y: { beginAtZero: true } }, responsive: true, plugins: { legend: { display: false } } },
-  });
-}
-
-// ---------- Symbol recognition: upload + draw ----------
-let currentImageBlob = null;
-
-document.getElementById("fileInput").addEventListener("change", (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
-  currentImageBlob = file;
-  document.getElementById("uploadPreview").src = URL.createObjectURL(file);
-});
-
-function setupDrawCanvas(canvas, lineWidth) {
-  const ctx = canvas.getContext("2d");
-  ctx.fillStyle = "white";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.lineWidth = lineWidth;
-  ctx.lineCap = "round";
-  ctx.strokeStyle = "black";
-
-  let drawing = false;
-  function getPos(e) {
-    const rect = canvas.getBoundingClientRect();
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    return { x: clientX - rect.left, y: clientY - rect.top };
-  }
-  function startDraw(e) { drawing = true; const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); }
-  function draw(e) {
-    if (!drawing) return;
-    const p = getPos(e);
-    ctx.lineTo(p.x, p.y);
-    ctx.stroke();
-    e.preventDefault();
-  }
-  function endDraw() { drawing = false; }
-
-  canvas.addEventListener("mousedown", startDraw);
-  canvas.addEventListener("mousemove", draw);
-  canvas.addEventListener("mouseup", endDraw);
-  canvas.addEventListener("mouseleave", endDraw);
-  canvas.addEventListener("touchstart", startDraw);
-  canvas.addEventListener("touchmove", draw);
-  canvas.addEventListener("touchend", endDraw);
-
-  return ctx;
-}
-
-const canvas = document.getElementById("drawCanvas");
-setupDrawCanvas(canvas, 10);
-
-document.getElementById("clearCanvas").addEventListener("click", () => {
-  const ctx = canvas.getContext("2d");
-  ctx.fillStyle = "white";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-});
-
-document.getElementById("useDrawing").addEventListener("click", () => {
-  canvas.toBlob((blob) => {
-    currentImageBlob = blob;
-    document.getElementById("uploadPreview").src = URL.createObjectURL(blob);
-  }, "image/png");
-});
-
-let lastResult = null;
-let lastModelUsed = null;
-
-document.getElementById("predictBtn").addEventListener("click", async () => {
-  const errEl = document.getElementById("predictError");
-  errEl.textContent = "";
-  if (!currentImageBlob) {
-    errEl.textContent = "Upload an image or draw a symbol first.";
-    return;
-  }
-  const modelName = document.getElementById("modelSelect").value;
-
-  const formData = new FormData();
-  formData.append("file", currentImageBlob, "input.png");
-  formData.append("model_name", modelName);
-
-  try {
-    const res = await fetch(`${API_BASE}/predict`, {
-      method: "POST",
-      headers: authHeaders(),
-      body: formData,
-    });
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      throw new Error(data.detail || "Prediction failed");
-    }
-    const data = await res.json();
-    lastResult = data;
-    lastModelUsed = modelName;
-    renderResult(data);
-    showView("result");
-  } catch (err) {
-    errEl.textContent = err.message;
-  }
-});
-
-function renderResult(data) {
-  document.getElementById("resultImage").src = document.getElementById("uploadPreview").src;
-  document.getElementById("resultSymbol").textContent = data.predicted_class;
-  document.getElementById("resultConfidence").textContent = (data.confidence * 100).toFixed(1) + "%";
-  document.getElementById("resultModel").textContent = data.model_used;
-  document.getElementById("resultDate").textContent = new Date(data.created_at).toLocaleString();
-
-  const ctx = document.getElementById("topKChart").getContext("2d");
-  if (window._topKChart) window._topKChart.destroy();
-  window._topKChart = new Chart(ctx, {
-    type: "bar",
-    data: {
-      labels: data.top_k.map((t) => t.class),
-      datasets: [{ label: "Probability", data: data.top_k.map((t) => t.probability), backgroundColor: "#6c8cff" }],
-    },
-    options: { indexAxis: "y", scales: { x: { beginAtZero: true, max: 1 } }, plugins: { legend: { display: false } } },
-  });
-}
-
-// ---------- Robustness analysis ----------
-document.getElementById("runRobustness").addEventListener("click", async () => {
-  if (!currentImageBlob) return;
-  const formData = new FormData();
-  formData.append("file", currentImageBlob, "input.png");
-  formData.append("model_name", lastModelUsed || "ssl_domain_gen");
-
-  try {
-    const res = await fetch(`${API_BASE}/predict/robustness`, {
-      method: "POST",
-      headers: authHeaders(),
-      body: formData,
-    });
-    const data = await res.json();
-    renderRobustness(data);
-    showView("robustness");
-  } catch (err) {
-    console.error(err);
-  }
-});
-
-function renderRobustness(data) {
-  const grid = document.getElementById("robustnessGrid");
-  grid.innerHTML = Object.entries(data.transformations)
-    .map(
-      ([name, result]) => `
-      <div class="robustness-item">
-        <h4>${name.replace(/_/g, " ")}</h4>
-        <div class="symbol">${result.predicted_class}</div>
-        <div>${(result.confidence * 100).toFixed(1)}% confidence</div>
-      </div>`
-    )
-    .join("");
-}
-
-// ---------- Formula recognition: upload + draw ----------
-let currentFormulaBlob = null;
-
-document.getElementById("formulaFileInput").addEventListener("change", (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
-  currentFormulaBlob = file;
-  document.getElementById("formulaPreview").src = URL.createObjectURL(file);
-});
-
-const formulaCanvas = document.getElementById("formulaDrawCanvas");
-setupDrawCanvas(formulaCanvas, 8);
-
-document.getElementById("clearFormulaCanvas").addEventListener("click", () => {
-  const ctx = formulaCanvas.getContext("2d");
-  ctx.fillStyle = "white";
-  ctx.fillRect(0, 0, formulaCanvas.width, formulaCanvas.height);
-});
-
-document.getElementById("useFormulaDrawing").addEventListener("click", () => {
-  formulaCanvas.toBlob((blob) => {
-    currentFormulaBlob = blob;
-    document.getElementById("formulaPreview").src = URL.createObjectURL(blob);
-  }, "image/png");
-});
-
-document.getElementById("formulaPredictBtn").addEventListener("click", async () => {
-  const errEl = document.getElementById("formulaError");
-  errEl.textContent = "";
-  document.getElementById("formulaResultCard").style.display = "none";
-
-  if (!currentFormulaBlob) {
-    errEl.textContent = "Upload a photo or draw a formula first.";
-    return;
-  }
-  const modelName = document.getElementById("formulaModelSelect").value;
-
-  const formData = new FormData();
-  formData.append("file", currentFormulaBlob, "formula.png");
-  formData.append("model_name", modelName);
-
-  try {
-    const res = await fetch(`${API_BASE}/predict/formula`, {
-      method: "POST",
-      headers: authHeaders(),
-      body: formData,
-    });
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      throw new Error(data.detail || "Formula recognition failed");
-    }
-    const data = await res.json();
-    renderFormulaResult(data);
-  } catch (err) {
-    errEl.textContent = err.message;
-  }
-});
-
-function renderFormulaResult(data) {
-  document.getElementById("formulaExpression").textContent = data.reconstructed_expression || "(none)";
-  const grid = document.getElementById("formulaSegments");
-  grid.innerHTML = data.segments
-    .map(
-      (s, i) => `
-      <div class="robustness-item">
-        <h4>Symbol ${i + 1}</h4>
-        <div class="symbol">${s.display_symbol}</div>
-        <div>${(s.confidence * 100).toFixed(1)}% confidence</div>
-      </div>`
-    )
-    .join("");
-  document.getElementById("formulaResultCard").style.display = "block";
-}
-
-// ---------- Init ----------
-renderNav();
-showView(getToken() ? "dashboard" : "landing");
+  </html>
