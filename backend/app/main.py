@@ -12,12 +12,15 @@ from .routers import auth_router, formula_router, models_router, predict_router,
 # Creates users/predictions tables on first run (SQLite file: backend/app.db)
 Base.metadata.create_all(bind=engine)
 
-app = FastAPI(title="Handwritten Math Symbol AI — Backend", version="0.2.0")
+app = FastAPI(title="Handwritten Math Symbol AI – Backend", version="0.2.0")
 
 _default_origins = [
     "http://localhost:5500",
     "http://127.0.0.1:5500",
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
     "https://sadik-2025.github.io",
+    "https://handwritten-math-symbol-ai.onrender.com",
 ]
 _env_origins = os.getenv("ALLOWED_ORIGINS")
 allowed_origins = (
@@ -38,17 +41,27 @@ app.include_router(formula_router.router)
 app.include_router(stats_router.router)
 app.include_router(models_router.router)
 
+
 # ---- Frontend ----
-FRONTEND_DIR = Path(__file__).resolve().parents[2] / "frontend"
+def _find_frontend_dir() -> Path:
+    here = Path(__file__).resolve()
+    candidates = [
+        here.parents[2] / "frontend",   # local: wex428-project/frontend
+        here.parents[1] / "frontend",   # docker: /app/frontend
+        Path.cwd() / "frontend",
+        Path.cwd().parent / "frontend",
+    ]
+    for c in candidates:
+        if (c / "index.html").exists():
+            return c
+    raise RuntimeError("frontend folder not found. Checked: " + ", ".join(str(c) for c in candidates))
+
+
+FRONTEND_DIR = _find_frontend_dir()
 
 app.mount("/static", StaticFiles(directory=FRONTEND_DIR), name="static")
 
 
-@app.get("/")
-def home():
+@app.get("/", include_in_schema=False)
+def serve_index():
     return FileResponse(FRONTEND_DIR / "index.html")
-
-
-@app.get("/health")
-def health_check():
-    return {"status": "ok"}
