@@ -12,9 +12,7 @@ domain-adversarial model. Includes handwritten formula recognition
 
 
 
-\*\*Live frontend:\*\* https://sadik-2025.github.io/workplace428/frontend/
-
-\*\*Backend:\*\* deployed on Render (see Deployment below)
+**Live app:** https://handwritten-math-symbol-ai.onrender.com
 
 
 
