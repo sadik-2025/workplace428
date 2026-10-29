@@ -10,11 +10,14 @@ from sqlalchemy.orm import Session
 
 from . import models
 from .auth import hash_password, require_admin
+from .bootstrap import ensure_admin_column, ensure_admin_user
 from .database import Base, engine, get_db
 from .routers import auth_router, formula_router, models_router, predict_router, stats_router
 
 # Creates users/predictions tables on first run (SQLite file: backend/app.db)
 Base.metadata.create_all(bind=engine)
+ensure_admin_column()
+ensure_admin_user()
 
 app = FastAPI(title="Handwritten Math Symbol AI – Backend", version="0.2.0")
 
