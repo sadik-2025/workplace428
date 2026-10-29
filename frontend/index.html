@@ -27,7 +27,7 @@
         <h1>Handwritten Math Symbol Recognition</h1>
         <p>Upload or draw a handwritten digit or math symbol and see how three
           different machine learning approaches — a baseline CNN, an
-          augmented CNN, and a self-supervised + domain-adversarial model —A
+          augmented CNN, and a self-supervised + domain-adversarial model —
           classify it.</p>
         <div class="hero-buttons">
           <button class="btn primary" data-nav="register">Get Started</button>
@@ -209,6 +209,42 @@
         <h3 style="margin-top:20px;">Detected Symbols (left to right)</h3>
         <div id="formulaSegments" class="robustness-grid"></div>
       </div>
+    </section>
+
+    <!-- ===================== ADMIN ===================== -->
+    <section data-view="admin" class="view">
+      <h2>Admin: Users</h2>
+
+      <div class="card">
+        <h3>Add a user</h3>
+        <form id="adminAddForm">
+          <label>Username</label>
+          <input type="text" id="adminNewUsername" required />
+          <label>Email</label>
+          <input type="email" id="adminNewEmail" required />
+          <label>Password</label>
+          <input type="password" id="adminNewPassword" required minlength="6" />
+          <label style="display:flex; align-items:center; gap:8px; margin-top:10px;">
+            <input type="checkbox" id="adminNewIsAdmin" style="width:auto;" /> Make this user an admin
+          </label>
+          <button type="submit" class="btn primary" style="margin-top:12px;">Add User</button>
+        </form>
+        <p id="adminAddMsg" class="error"></p>
+      </div>
+
+      <p id="adminMsg" style="margin-top:20px;"></p>
+      <table style="width:100%; border-collapse:collapse; text-align:left;">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Username</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="adminUsersBody"></tbody>
+      </table>
     </section>
 
     <!-- ===================== PROFILE ===================== -->

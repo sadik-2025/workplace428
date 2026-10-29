@@ -7,13 +7,14 @@ function showView(name) {
   window.scrollTo(0, 0);
   if (name === "dashboard") loadDashboard();
   if (name === "profile") loadProfile();
+  if (name === "admin") loadAdmin();
 }
 document.body.addEventListener("click", (e) => {
   const target = e.target.closest("[data-nav]");
   if (target) {
     e.preventDefault();
     const view = target.dataset.nav;
-    if (["dashboard", "recognize", "profile", "result", "robustness", "formula"].includes(view) && !getToken()) {
+    if (["dashboard", "recognize", "profile", "result", "robustness", "formula", "admin"].includes(view) && !getToken()) {
       showView("login");
       return;
     }
@@ -38,9 +39,11 @@ function renderNav() {
       <a data-nav="dashboard">Dashboard</a>
       <a data-nav="recognize">Recognize</a>
       <a data-nav="formula">Formula</a>
+      <a data-nav="admin" id="navAdmin" style="display:none">Admin</a>
       <a data-nav="profile">Profile</a>
       <a id="navLogout">Log Out</a>
     `;
+    showAdminLinkIfAdmin();
     document.getElementById("navLogout").addEventListener("click", () => {
       clearToken();
       renderNav();
@@ -489,6 +492,106 @@ function renderFormulaResult(data) {
     .join("");
   document.getElementById("formulaResultCard").style.display = "block";
 }
+
+// ---------- Admin ----------
+async function showAdminLinkIfAdmin() {
+  try {
+    const res = await fetch(`${API_BASE}/auth/me`, { headers: authHeaders() });
+    if (!res.ok) return;
+    const me = await res.json();
+    const link = document.getElementById("navAdmin");
+    if (link && me.is_admin) link.style.display = "";
+  } catch { }
+}
+
+async function loadAdmin() {
+  const body = document.getElementById("adminUsersBody");
+  const msg = document.getElementById("adminMsg");
+  body.innerHTML = "";
+  msg.textContent = "Loading...";
+  try {
+    const meRes = await fetch(`${API_BASE}/auth/me`, { headers: authHeaders() });
+    const me = meRes.ok ? await meRes.json() : {};
+
+    const res = await fetch(`${API_BASE}/admin/users`, { headers: authHeaders() });
+    if (res.status === 403) { msg.textContent = "Admins only."; return; }
+    if (!res.ok) { msg.textContent = "Could not load users."; return; }
+    const users = await res.json();
+    msg.textContent = `${users.length} users`;
+
+    users.forEach((u) => {
+      const tr = document.createElement("tr");
+      [u.id, u.username, u.email, u.is_admin ? "Admin" : "User"].forEach((v) => {
+        const td = document.createElement("td");
+        td.textContent = v;
+        tr.appendChild(td);
+      });
+
+      const actionTd = document.createElement("td");
+      if (u.id === me.id) {
+        actionTd.textContent = "(you)";
+      } else {
+        const btn = document.createElement("button");
+        btn.className = "btn";
+        btn.textContent = "Delete";
+        btn.addEventListener("click", () => deleteUser(u));
+        actionTd.appendChild(btn);
+      }
+      tr.appendChild(actionTd);
+      body.appendChild(tr);
+    });
+  } catch {
+    msg.textContent = "Server not reachable.";
+  }
+}
+
+async function deleteUser(u) {
+  if (!confirm(`Delete user "${u.username}" and all their predictions?`)) return;
+  const msg = document.getElementById("adminMsg");
+  try {
+    const res = await fetch(`${API_BASE}/admin/users/${u.id}`, {
+      method: "DELETE",
+      headers: authHeaders(),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      msg.textContent = data.detail || "Delete failed";
+      return;
+    }
+    loadAdmin();
+  } catch {
+    msg.textContent = "Server not reachable.";
+  }
+}
+
+document.getElementById("adminAddForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const errEl = document.getElementById("adminAddMsg");
+  errEl.textContent = "";
+  const payload = {
+    username: document.getElementById("adminNewUsername").value,
+    email: document.getElementById("adminNewEmail").value,
+    password: document.getElementById("adminNewPassword").value,
+    is_admin: document.getElementById("adminNewIsAdmin").checked,
+  };
+  try {
+    const res = await fetch(`${API_BASE}/admin/users`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...authHeaders() },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      const d = data.detail;
+      errEl.textContent = typeof d === "string" ? d : "Could not add user (check the email format).";
+      return;
+    }
+    e.target.reset();
+    loadAdmin();
+  } catch {
+    errEl.textContent = "Server not reachable.";
+  }
+});
 
 // ---------- Init ----------
 renderNav();
